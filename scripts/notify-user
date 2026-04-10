@@ -26,4 +26,14 @@ if [[ "$active" == "1" ]]; then
   exit 0
 fi
 
-tmux display-message -t "$target" -d 4000 " [$worker_name] needs your attention "
+last_used=$(tmux display-message -t "$target" -p '#{pane_last_used}')
+now=$(date +%s)
+
+if (( now - last_used > 3 )); then
+  # User is idle — switch focus to the worker pane and notify there
+  tmux select-pane -t "$TMUX_PANE"
+  tmux display-message -t "$TMUX_PANE" -d 4000 " [$worker_name] needs your attention "
+else
+  # User is active — show notification on Sage's pane without switching
+  tmux display-message -t "$target" -d 4000 " [$worker_name] needs your attention "
+fi
