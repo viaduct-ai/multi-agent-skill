@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# set-task — update the current worker pane's task description in the border label
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib.sh"
+
+_ma_set_worker_task "$TMUX_PANE" "$*"

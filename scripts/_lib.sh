@@ -16,6 +16,18 @@ _ma_get_worker_name() {
   tmux show-options -p -t "$pane" -v @worker-name 2>/dev/null
 }
 
+# Set @worker-task user option on a pane
+_ma_set_worker_task() {
+  local pane="$1" description="$2"
+  tmux set-option -p -t "$pane" @worker-task "$description"
+}
+
+# Read @worker-task from a pane; prints nothing if unset
+_ma_get_worker_task() {
+  local pane="$1"
+  tmux show-options -p -t "$pane" -v @worker-task 2>/dev/null
+}
+
 # Find a pane in the current window by its @worker-name; prints pane_id or nothing
 _ma_get_pane_id_by_worker_name() {
   local target="$1"

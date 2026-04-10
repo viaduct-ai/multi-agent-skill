@@ -21,6 +21,12 @@ Set your pane title to your assigned name:
 tmux select-pane -T "<your name from arguments>"
 ```
 
+When you receive your task, immediately set your task description in the border label:
+```bash
+~/.claude/scripts/multi-agent/set-task "brief description of your task"
+```
+Keep it short (5–8 words). Update it if your task changes.
+
 To report back to Simon at any time (progress update, question, or final result), run:
 
 ```bash

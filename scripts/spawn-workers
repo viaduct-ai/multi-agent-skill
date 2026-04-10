@@ -55,6 +55,6 @@ _ma_set_worker_name "$main_pane" "Simon"
 
 # Enable pane border labels
 tmux set-option pane-border-status top
-tmux set-option pane-border-format ' #{@worker-name} '
+tmux set-option pane-border-format ' #[bold]#{@worker-name}#[nobold]#{?#{@worker-task}: — #{@worker-task},} '
 
 tmux select-pane -t "$main_pane"
