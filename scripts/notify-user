@@ -20,4 +20,4 @@ fi
 sage_pane=$(_ma_get_sage_pane)
 target="${sage_pane:-$TMUX_PANE}"
 
-tmux display-popup -t "$target" -d 5 "[$worker_name] needs your attention"
+tmux display-popup -t "$target" -E -w 60 -h 3 -x C -y 0 "echo '[$worker_name] needs your attention' && sleep 3"
