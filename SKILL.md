@@ -30,7 +30,7 @@ Keep it short (5–8 words). Update it if your task changes.
 To report back to Simon at any time (progress update, question, or final result), run:
 
 ```bash
-tmux send-keys -t <main_pane_id> '<your message here>' Enter
+~/.claude/scripts/multi-agent/send-message <main_pane_id> '<your message here>'
 ```
 
 **Always sign your messages with your name** and **notify Simon when your task is complete** with a short summary of what you did and any relevant output.
@@ -100,7 +100,7 @@ tmux set-option -p @worker-name "Simon" && ~/.claude/scripts/multi-agent/spawn-w
 ## Sending a Follow-up Message to a Worker
 
 ```bash
-tmux send-keys -t <pane_id> "<message>" Enter
+~/.claude/scripts/multi-agent/send-message <pane_id> '<message>'
 ```
 
 ## Closing Worker Sessions
