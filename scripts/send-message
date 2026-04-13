@@ -14,6 +14,12 @@ if [[ -z "$name" || -z "$message" ]]; then
   exit 1
 fi
 
+sender=$(tmux show-options -pv @worker-name 2>/dev/null || true)
+if [[ -z "$sender" ]]; then
+  sender="Unknown"
+fi
+message="${sender}: ${message}"
+
 pane=$(_ma_get_pane_id_by_worker_name "$name")
 if [[ -z "$pane" ]]; then
   echo "Error: no worker named '$name' found in the current window." >&2
