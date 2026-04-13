@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# notify-user — show a tmux popup on Simon's pane alerting that a worker needs attention
-# Called as a hook from worker panes; silently exits if not in a worker pane.
+# notify-user — switch focus to a worker pane when it finishes a turn,
+# unless it is already the active pane.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_lib.sh"
 
-# Check if we're in a worker pane
 if [[ -z "${TMUX_PANE:-}" ]]; then
   exit 0
 fi
@@ -16,24 +15,10 @@ if [[ -z "$worker_name" ]]; then
   exit 0
 fi
 
-# Find Simon's pane
-sage_pane=$(_ma_get_sage_pane)
-target="${sage_pane:-$TMUX_PANE}"
-
-# Skip popup if target pane is already focused
-active=$(tmux display-message -t "$target" -p '#{pane_active}')
-if [[ "$active" == "1" ]]; then
+# Already focused — nothing to do
+is_active=$(tmux list-panes -F '#{pane_id} #{pane_active}' | awk -v p="$TMUX_PANE" '$1==p{print $2}')
+if [[ "$is_active" == "1" ]]; then
   exit 0
 fi
 
-last_used=$(tmux display-message -t "$target" -p '#{pane_last_used}')
-now=$(date +%s)
-
-if (( now - last_used > 3 )); then
-  # User is idle — switch focus to the worker pane and notify there
-  tmux select-pane -t "$TMUX_PANE"
-  tmux display-message -t "$TMUX_PANE" -d 4000 " [$worker_name] needs your attention "
-else
-  # User is active — show notification on Simon's pane without switching
-  tmux display-message -t "$target" -d 4000 " [$worker_name] needs your attention "
-fi
+tmux select-pane -t "$TMUX_PANE"
