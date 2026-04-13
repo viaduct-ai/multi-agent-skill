@@ -7,10 +7,17 @@ source "$SCRIPT_DIR/_lib.sh"
 
 name="${1:-}"
 shift || true
-message="$*"
+
+# If no inline message is given, read from stdin (allows: cat /tmp/task.txt | send-message Wade)
+if [[ $# -eq 0 ]]; then
+  message="$(cat)"
+else
+  message="$*"
+fi
 
 if [[ -z "$name" || -z "$message" ]]; then
   echo "Usage: send-message <name> <message>" >&2
+  echo "       cat /tmp/task.txt | send-message <name>" >&2
   exit 1
 fi
 

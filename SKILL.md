@@ -27,15 +27,23 @@ When you receive your task, immediately set your task description in the border 
 ```
 Keep it short (5–8 words). Update it if your task changes.
 
-To report back to Simon at any time (progress update, question, or final result, run:
+To report back to Simon at any time (progress update, question, or final result), run:
 
 ```bash
 ~/.claude/scripts/multi-agent/send-message Simon '<your message here>'
 ```
 
+For longer messages (multi-line content, task results, code snippets), **write the content to a temp file first using the Write tool**, then pipe it — this avoids heredocs and shell quoting issues:
+
+```bash
+cat /tmp/my-message.txt | ~/.claude/scripts/multi-agent/send-message Simon
+```
+
 **Never use `tmux send-keys` directly** — always use `send-message`. It waits for the target prompt to be idle before injecting, preventing garbled input.
 
-**Always sign your messages with your name** and **notify Simon when your task is complete** with a short summary of what you did and any relevant output.
+**Never use heredocs (`<<EOF`) or here-strings (`<<<`) to pass message content** — they require shell authorization and are fragile. Write to a file with the Write tool instead, then pipe.
+
+**Notify Simon when your task is complete** with a short summary of what you did and any relevant output. Do not sign messages with your name — `send-message` prepends it automatically.
 
 Wait for your task instructions — they will follow in the next message.
 
@@ -99,11 +107,19 @@ To spawn a single additional worker at any time:
 tmux set-option -p @worker-name "Simon" && ~/.claude/scripts/multi-agent/spawn-workers 1
 ```
 
-## Sending a Follow-up Message to a Worker
+## Sending a Message to a Worker
 
+For short messages, pass inline:
 ```bash
-~/.claude/scripts/multi-agent/send-message <worker_name> "<message>"
+~/.claude/scripts/multi-agent/send-message <worker_name> "<short message>"
 ```
+
+For longer task assignments or multi-line content, **write the content to a temp file using the Write tool** (no shell authorization required), then pipe it in:
+```bash
+cat /tmp/task-for-wade.txt | ~/.claude/scripts/multi-agent/send-message Wade
+```
+
+**Never use heredocs (`<<EOF`) or here-strings (`<<<`) to pass message content** — they require shell authorization and break on special characters. Use the Write tool + pipe instead.
 
 ## Closing Worker Sessions
 
