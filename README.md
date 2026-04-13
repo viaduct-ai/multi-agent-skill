@@ -54,7 +54,7 @@ To spawn workers immediately on load:
 ~/.claude/scripts/multi-agent/list-workers
 
 # Send a message to a worker
-~/.claude/scripts/multi-agent/send-worker Wade "your task here"
+~/.claude/scripts/multi-agent/send-message Wade "your task here"
 
 # Close a specific worker
 ~/.claude/scripts/multi-agent/close-worker Wade
@@ -75,18 +75,18 @@ scripts/       # Helper bash scripts
   close-worker   # Kill a named worker pane
   close-workers  # Kill all worker panes
   list-workers   # List active workers
-  send-worker    # Send a message to a named worker
+  send-message   # Send a message to a named worker (waits for idle prompt)
 ```
 
 ## Roadmap
 
-- more visible contest name bold + task
-- prevent messages getting garbled together
-- have at most two worker windows but more workers
-- add a pool of tasks 
-- focus moves worker view to the top, once it continues cycle to the next worker who asked for the user
-- optional sound when a worker needs help
-- set permissions to run scripts on install or when loading the skill ?
-  - allow all workers to edit files in the working directory
-  - allow all workest to use the scripts in the skill
-- add instructions for workers to make independent checkouts/worktrees to work on
+- [x] more visible contest name bold + task
+- [ ] prevent messages getting garbled together
+- [ ] have at most two worker windows but more workers
+- [ ] add a pool of tasks 
+- [ ] focus moves worker view to the top, once it continues cycle to the next worker who asked for the user
+- [ ] optional sound when a worker needs help
+- [ ] set permissions to run scripts on install or when loading the skill ?
+  - [ ] allow all workers to edit files in the working directory
+  - [ ] allow all workest to use the scripts in the skill
+- [ ] add instructions for workers to make independent checkouts/worktrees to work on
