@@ -81,7 +81,7 @@ scripts/       # Helper bash scripts
 ## Roadmap
 
 - [x] more visible contest name bold + task
-- [ ] prevent messages getting garbled together
+- [x] prevent messages getting garbled together
 - [ ] have at most two worker windows but more workers
 - [ ] add a pool of tasks 
 - [ ] focus moves worker view to the top, once it continues cycle to the next worker who asked for the user
