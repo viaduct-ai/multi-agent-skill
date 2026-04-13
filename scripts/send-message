@@ -14,7 +14,7 @@ if [[ -z "$name" || -z "$message" ]]; then
   exit 1
 fi
 
-sender=$(tmux show-options -pv @worker-name 2>/dev/null || true)
+sender=$(tmux show-options -p -t "$TMUX_PANE" -v @worker-name 2>/dev/null || true)
 if [[ -z "$sender" ]]; then
   sender="Unknown"
 fi
