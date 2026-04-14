@@ -27,6 +27,9 @@ if [[ ${#picked[@]} -lt $n ]]; then
   echo "Warning: only ${#picked[@]} unused worker name(s) available (requested $n)." >&2
 fi
 
+state_dir=$(_ma_state_dir)
+mkdir -p "$state_dir"
+
 first_worker_pane=""
 for name in "${picked[@]}"; do
   if [[ -z "$first_worker_pane" ]]; then
@@ -40,6 +43,7 @@ for name in "${picked[@]}"; do
   tmux select-pane -t "$pane" -T "$name"
   tmux set-option -t "$pane" allow-rename off
   touch "/tmp/claude-idle-${pane}"
+  _ma_set_state "$name" "idle"
   tmux send-keys -t "$pane" "claude" Enter
   sleep 3
   # Re-apply both title and user option after claude starts (title may be overridden)
@@ -59,3 +63,8 @@ tmux set-option pane-border-status top
 tmux set-option pane-border-format ' #[bold]#{@worker-name}#[nobold]#{?#{@worker-task}, — #{@worker-task},} '
 
 tmux select-pane -t "$main_pane"
+
+# Start the worker watcher daemon
+"$SCRIPT_DIR/watch-workers" &
+disown
+echo "Started watch-workers daemon (pid $!)"

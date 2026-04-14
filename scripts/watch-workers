@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# watch-workers — background daemon that tracks worker pane activity and
+# transitions workers between active and waiting states.
+# Started by spawn-workers; killed by close-workers.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib.sh"
+
+POLL_INTERVAL=2   # seconds between checks
+WAIT_THRESHOLD=8  # seconds of pane inactivity before marking a worker as waiting
+
+state_dir=$(_ma_state_dir)
+mkdir -p "$state_dir"
+echo $$ > "$state_dir/watcher.pid"
+
+while true; do
+  sleep "$POLL_INTERVAL"
+
+  while IFS=' ' read -r pane_id name; do
+    [[ "$name" == "Simon" ]] && continue
+
+    state=$(_ma_get_state "$name")
+    [[ "$state" == "idle" ]] && continue
+
+    last_activity=$(tmux display-message -t "$pane_id" -p '#{pane_activity}' 2>/dev/null) || continue
+    now=$(date +%s)
+    elapsed=$(( now - last_activity ))
+
+    if [[ "$state" == "active" ]] && (( elapsed > WAIT_THRESHOLD )); then
+      _ma_set_state "$name" "waiting"
+      "$SCRIPT_DIR/bring-focus"
+    elif [[ "$state" == "waiting" ]] && (( elapsed <= WAIT_THRESHOLD )); then
+      _ma_set_state "$name" "active"
+    fi
+  done < <(_ma_list_worker_panes)
+done

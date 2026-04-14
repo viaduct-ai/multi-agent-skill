@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# bring-focus — switch tmux focus to the longest-waiting worker.
+# Called by watch-workers when a worker transitions to the waiting state.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib.sh"
+
+MIN_SWAP_INTERVAL=10  # seconds between focus switches to avoid thrashing
+
+state_dir=$(_ma_state_dir)
+
+# Find the waiting worker that has been waiting the longest (oldest mtime)
+target_pane=""
+target_name=""
+oldest_mtime=9999999999
+
+while IFS=' ' read -r pane_id name; do
+  [[ "$name" == "Simon" ]] && continue
+  [[ "$(_ma_get_state "$name")" != "waiting" ]] && continue
+
+  mtime=$(stat -f %m "$state_dir/${name}.waiting" 2>/dev/null) || continue
+  if (( mtime < oldest_mtime )); then
+    oldest_mtime=$mtime
+    target_pane=$pane_id
+    target_name=$name
+  fi
+done < <(_ma_list_worker_panes)
+
+[[ -z "$target_pane" ]] && exit 0
+
+# Guard: user is already focused on the target pane
+is_active=$(tmux list-panes -F '#{pane_id} #{pane_active}' | awk -v p="$target_pane" '$1==p{print $2}')
+[[ "$is_active" == "1" ]] && exit 0
+
+# Guard: cooldown since last focus switch
+last_swap_file="$state_dir/last-swap"
+if [[ -f "$last_swap_file" ]]; then
+  last_swap=$(cat "$last_swap_file")
+  now=$(date +%s)
+  if (( now - last_swap < MIN_SWAP_INTERVAL )); then
+    exit 0
+  fi
+fi
+
+# Guard: target is already the active pane
+current_active=$(tmux list-panes -F '#{pane_id} #{pane_active}' | awk '$2==1{print $1}')
+[[ "$current_active" == "$target_pane" ]] && exit 0
+
+# Switch focus
+date +%s > "$last_swap_file"
+tmux select-pane -t "$target_pane"
+tmux display-message -t "$target_pane" -d 4000 " [$target_name] needs your attention "

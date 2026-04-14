@@ -12,3 +12,15 @@ while IFS=' ' read -r pane_id name; do
 done < <(_ma_list_worker_panes)
 
 echo "Closed $killed worker pane(s)."
+
+# Stop the watcher daemon
+state_dir=$(_ma_state_dir)
+pid_file="$state_dir/watcher.pid"
+if [[ -f "$pid_file" ]]; then
+  pid=$(cat "$pid_file")
+  kill "$pid" 2>/dev/null && echo "Stopped watch-workers (pid $pid)" || true
+fi
+
+# Clean up state directory
+rm -rf "$state_dir"
+echo "Cleaned up state directory."

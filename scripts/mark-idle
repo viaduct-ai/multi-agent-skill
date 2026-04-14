@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
-# mark-idle — touch the idle flag file for the current pane
+# mark-idle — mark the current pane's worker as idle.
+# Runs as a Stop hook after each agent turn completes.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib.sh"
 
 if [[ -z "${TMUX_PANE:-}" ]]; then
   exit 0
 fi
 
+# Keep the idle flag file for send-message compatibility
 touch "/tmp/claude-idle-${TMUX_PANE}"
+
+# Update state file if this pane belongs to a known worker
+worker_name=$(_ma_get_worker_name "$TMUX_PANE")
+if [[ -n "$worker_name" ]]; then
+  _ma_set_state "$worker_name" "idle"
+fi

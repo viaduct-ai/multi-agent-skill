@@ -46,6 +46,33 @@ _ma_get_sage_pane() {
   _ma_get_pane_id_by_worker_name "Simon"
 }
 
+# Return the state directory for the current tmux session
+_ma_state_dir() {
+  local session
+  session=$(tmux display-message -p '#{session_name}' 2>/dev/null | tr -cd 'a-zA-Z0-9-_')
+  echo "/tmp/multi-agent-${session}"
+}
+
+# Set a worker's state (idle | active | waiting)
+_ma_set_state() {
+  local name="$1" new_state="$2"
+  local dir
+  dir=$(_ma_state_dir)
+  mkdir -p "$dir"
+  rm -f "$dir/${name}.idle" "$dir/${name}.active" "$dir/${name}.waiting"
+  touch "$dir/${name}.${new_state}"
+}
+
+# Get a worker's current state; prints nothing if unknown
+_ma_get_state() {
+  local name="$1"
+  local dir
+  dir=$(_ma_state_dir)
+  for state in idle active waiting; do
+    [[ -f "$dir/${name}.${state}" ]] && echo "$state" && return
+  done
+}
+
 # List all panes in the current window that have @worker-name set
 # Prints: pane_id worker_name
 _ma_list_worker_panes() {

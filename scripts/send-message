@@ -45,6 +45,7 @@ while [[ ! -f "$idle_flag" ]]; do
   attempts=$(( attempts + 1 ))
 done
 rm -f "$idle_flag"
+_ma_set_state "$name" "active"
 
 tmux send-keys -t "$pane" -l "$message"
 # send-keys -l delivers characters to the pty one by one; without a pause,
