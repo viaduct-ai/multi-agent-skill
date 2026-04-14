@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# watch-workers — background daemon that tracks worker pane activity and
-# transitions workers between active and waiting states.
-# Started by spawn-workers; killed by close-workers.
+# watch-workers — background daemon that tracks worker pane activity by comparing
+# captured pane content between polls. Transitions workers between active and
+# waiting states. Started by spawn-workers; killed by close-workers.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_lib.sh"
 
 POLL_INTERVAL=2   # seconds between checks
-WAIT_THRESHOLD=8  # seconds of pane inactivity before marking a worker as waiting
+WAIT_THRESHOLD=15 # seconds of unchanged pane content before marking a worker as waiting
 
 state_dir=$(_ma_state_dir)
 mkdir -p "$state_dir"
@@ -23,15 +23,32 @@ while true; do
     state=$(_ma_get_state "$name")
     [[ "$state" == "idle" ]] && continue
 
-    last_activity=$(tmux display-message -t "$pane_id" -p '#{pane_activity}' 2>/dev/null) || continue
-    now=$(date +%s)
-    elapsed=$(( now - last_activity ))
+    # Hash current visible pane content
+    current_hash=$(tmux capture-pane -t "$pane_id" -p 2>/dev/null | md5) || continue
 
-    if [[ "$state" == "active" ]] && (( elapsed > WAIT_THRESHOLD )); then
-      _ma_set_state "$name" "waiting"
-      "$SCRIPT_DIR/bring-focus"
-    elif [[ "$state" == "waiting" ]] && (( elapsed <= WAIT_THRESHOLD )); then
-      _ma_set_state "$name" "active"
+    hash_file="$state_dir/${name}.hash"
+    changed_file="$state_dir/${name}.changed"
+    prev_hash=""
+    [[ -f "$hash_file" ]] && prev_hash=$(cat "$hash_file")
+
+    if [[ "$current_hash" != "$prev_hash" ]]; then
+      # Pane content changed — worker is producing output
+      echo "$current_hash" > "$hash_file"
+      date +%s > "$changed_file"
+      if [[ "$state" == "waiting" ]]; then
+        _ma_set_state "$name" "active"
+      fi
+    else
+      # Pane content unchanged — check how long it has been quiet
+      now=$(date +%s)
+      last_changed=0
+      [[ -f "$changed_file" ]] && last_changed=$(cat "$changed_file")
+      elapsed=$(( now - last_changed ))
+
+      if [[ "$state" == "active" ]] && (( elapsed > WAIT_THRESHOLD )); then
+        _ma_set_state "$name" "waiting"
+        "$SCRIPT_DIR/bring-focus"
+      fi
     fi
   done < <(_ma_list_worker_panes)
 done
