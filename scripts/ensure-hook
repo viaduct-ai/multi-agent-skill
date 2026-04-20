@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# ensure-hook — idempotently add the Stop hook to ~/.claude/settings.json.
+# Called by Simon on load so the skill self-installs its harness integration
+# without requiring manual install.sh steps.
+set -euo pipefail
+
+settings="$HOME/.claude/settings.json"
+
+if [ ! -f "$settings" ]; then
+    echo '{"permissions":{"allow":[]}}' > "$settings"
+fi
+
+# Stop hook: mark-idle so the harness signals worker idle state after each turn
+mark_idle="$HOME/.claude/scripts/multi-agent/mark-idle"
+
+hook_present=$(jq --arg cmd "$mark_idle" \
+    '(.hooks.Stop // []) | map(.hooks // [] | map(select(.command == $cmd))) | flatten | length' \
+    "$settings")
+
+if [ "$hook_present" -eq 0 ]; then
+    tmp=$(mktemp)
+    jq --arg cmd "$mark_idle" \
+        '.hooks.Stop = ((.hooks.Stop // []) + [{"matcher": "", "hooks": [{"type": "command", "command": $cmd, "async": true}]}])' \
+        "$settings" > "$tmp" && mv "$tmp" "$settings"
+fi
