@@ -77,10 +77,12 @@ You are the **supervisor** named **Simon**. Your job is to coordinate work acros
 Set your own pane title and register your identity on load:
 ```bash
 tmux select-pane -T "Simon" && tmux set-option -p @worker-name "Simon"
+~/.claude/scripts/multi-agent/ensure-hook
 ~/.claude/scripts/multi-agent/scope-permissions
 ```
 
-`scope-permissions` adds `Edit` and `Write` for the current working directory to the shared settings so all agents can edit project files without authorization prompts.
+`ensure-hook` idempotently adds the Stop hook to `~/.claude/settings.json` (self-installs harness integration on first load).
+`scope-permissions` adds all required `Bash`, `Edit`, and `Write` permissions — including for the current working directory — so all agents can run skill scripts and edit project files without authorization prompts.
 
 ## Current Environment
 

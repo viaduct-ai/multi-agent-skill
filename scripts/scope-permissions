@@ -1,14 +1,29 @@
 #!/usr/bin/env bash
-# scope-permissions — add Edit and Write permissions for the current working directory.
-# Called by Simon on load so all agents can edit project files without authorization
-# prompts. Settings are written to ~/.claude/settings.json which is shared across
-# all Claude Code instances in the session.
+# scope-permissions — add required permissions to ~/.claude/settings.json.
+# Called by Simon on load so all agents can run skill scripts and edit project
+# files without authorization prompts. Settings are shared across all Claude
+# Code instances in the session.
 set -euo pipefail
 
 settings="$HOME/.claude/settings.json"
 cwd=$(pwd)
 
-for entry in "Edit($cwd/**)" "Write($cwd/**)"; do
+if [ ! -f "$settings" ]; then
+    echo '{"permissions":{"allow":[]}}' > "$settings"
+fi
+
+ENTRIES=(
+    "Bash(~/.claude/scripts/multi-agent/*)"  # skill scripts
+    "Bash(tmux *)"                            # tmux commands
+    "Bash(cat /tmp/*)"                        # pipe temp files to send-message
+    "Bash(rm -f /tmp/*)"                      # clean up temp files
+    "Write(/tmp/**)"                          # write temp files
+    "Edit(/tmp/**)"                           # edit temp files
+    "Edit($cwd/**)"                           # project files (path varies per project)
+    "Write($cwd/**)"                          # project files (path varies per project)
+)
+
+for entry in "${ENTRIES[@]}"; do
     present=$(jq --arg e "$entry" '(.permissions.allow // []) | map(select(. == $e)) | length' "$settings")
     if [ "$present" -eq 0 ]; then
         tmp=$(mktemp)
